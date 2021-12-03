@@ -107,7 +107,7 @@
             return a;
         }
         _sw(way, x, y){
-            const {k, toI} = this;
+            const {toI} = this;
             switch(way) {
                 case 0: return toI(x + 1, y);
                 case 1: return toI(x, y - 1);
@@ -116,13 +116,88 @@
             }
         }
     };
+    const toWay = (x, y) => {
+        if(x === 1) return 0;
+        else if(y === 1) return 1;
+        else if(x === -1) return 2;
+        else if(y === -1) return 3;
+        else return -1;
+    };
+    const sw = (way, x, y, w, h) => {
+        const [_w, _h] = [w, h].map(v => v >> 1);
+        switch(way) {
+            case 0: return [x, y + _h];
+            case 1: return [x + _w, y];
+            case 2: return [x + w , y + _h];
+            case 3: return [x + _w, y + h];
+        }
+    };
     rpgen3.addBtn(main, 'make', () => {
         sel.init();
+        const result = [];
         const {k, toXY} = config,
-              [w, h] = config.wh.map(v => v());
+              [w, h] = config.wh.map(v => v()),
+              [_w, _h] = [w, h].map(v => v - 3 >> 1),
+              yukaW = w * 9,
+              yukaH = h * 9,
+              yuka = [...Array(yukaH * yukaW).fill('')],
+              mono = yuka.slice();
+        let _x = 0, _y = 0;
         for(const [i, v] of config.how().entries()) {
-            const [x, y] = toXY(i);
-            new rpgen.FullEvent(1).make(events, x, y);
+            const [x, y] = toXY(i),
+                  way = toWay(x - _x, y - _y),
+                  events = [];
+            for(const i of Array(w * h).keys()) {
+                const [x0, y0] = rpgen3.toXY(yukaW, i),
+                      _i = rpgen3.toI(yukaW, x + x0, y + y0);
+                yuka[_i] = '31343';
+                if(
+                    y0 === 0 ||
+                    y0 === h - 1 ||
+                    x0 === 0 ||
+                    x0 === w - 1
+                ) mono[_i] = '31346';
+            }
+            events.push(`#MV_CA\ntx:7,ty:5,t:500,s:1,tw:7,\n#ED`);
+            for(const i of Array(_w * _h).keys()) {
+                const [x0, y0] = rpgen3.toXY(_w, i),
+                      [x1, y1] = [x0, y0].map(v => (v << 1) + 3),
+                      a = [];
+                a.push([1, 0]);
+                a.push([-1, 0]);
+                a.push([0, 1]);
+                if(!y0) a.push([0, -1]);
+                events.push(sel.make(a.map(([x2, y2]) => `#CH_SP\nn:31346,tx:${x + x1 + x2},ty:${y + y1 + y2},l:3,`)));
+            }
+            events.push(`#MV_CF\nt:500,s:1,tw:7,\n#ED`);
+            events.push(`#RM_EV\n#ED`);
+            result.push(new rpgen.FullEvent(1).make(events, ...(
+                way === -1 ? [0, 0] : (() => {
+                    const [_x, _y] = sw(way, x, y, w, h);
+                    mono[rpgen3.toI(yukaW, _x, _y)] = '';
+                    return [_x, _y];
+                })()
+            )));
+            _x = x;
+            _y = y;
         }
+        const f = arr => {
+            let s = '';
+            for(const y of Array(yukaH).keys()) {
+                const i = rpgen3.toI(yukaW, 0, y);
+                s += arr.slice(i, i + yukaW).join(' ') + '\n';
+            }
+            return s;
+        };
+        const d = mapData
+        + `#FLOOR\n${f(yuka)}#END`
+        + '\n\n'
+        + `#MAP\n${f(yuka)}#END`
+        + '\n\n';
+        rpgen3.addInputStr(foot.empty(), {
+            value: rpgen.set(d + result.join('\n\n')),
+            copy: true
+        });
     });
+    const mapData = await(await fetch('data/map.txt')).text();
 })();
