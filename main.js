@@ -150,15 +150,16 @@
                   yh = y * h,
                   events = [];
             for(const i of Array(w * h).keys()) {
-                const [x0, y0] = rpgen3.toXY(yukaW, i),
+                const [x0, y0] = rpgen3.toXY(w, i),
                       _i = rpgen3.toI(yukaW, xw + x0, yh + y0);
                 yuka[_i] = '31343';
                 if(
                     y0 === 0 ||
                     y0 === h - 1 ||
                     x0 === 0 ||
-                    x0 === w - 1
-                ) mono[_i] = '31346';
+                    x0 === w - 1 ||
+                    (x0 % 2 === 0 && y0 % 2 === 0)
+                ) mono[_i] = '31346C';
             }
             events.push(`#MV_CA\ntx:7,ty:5,t:500,s:1,tw:7,\n#ED`);
             for(const i of Array(_w * _h).keys()) {
@@ -174,7 +175,7 @@
             events.push(`#MV_CF\nt:500,s:1,tw:7,\n#ED`);
             events.push(`#RM_EV\n#ED`);
             const [__x, __y] = way === -1 ? [0, 0] : (() => {
-                const [_x, _y] = sw(way, x, y, w, h);
+                const [_x, _y] = sw(way, xw, yh, w, h);
                 mono[rpgen3.toI(yukaW, _x, _y)] = '';
                 return [_x, _y];
             })();
@@ -197,7 +198,7 @@
         const d = mapData
         + `#FLOOR\n${f(yuka)}#END`
         + '\n\n'
-        + `#MAP\n${f(yuka)}#END`
+        + `#MAP\n${f(mono)}#END`
         + '\n\n';
         rpgen3.addInputStr(foot.empty(), {
             value: rpgen.set(d + result.join('\n\n')),
