@@ -146,10 +146,12 @@
         for(const [i, v] of config.how().entries()) {
             const [x, y] = config.toXY(i),
                   way = toWay(x - _x, y - _y),
+                  xw = x * w,
+                  yh = y * h,
                   events = [];
             for(const i of Array(w * h).keys()) {
                 const [x0, y0] = rpgen3.toXY(yukaW, i),
-                      _i = rpgen3.toI(yukaW, x + x0, y + y0);
+                      _i = rpgen3.toI(yukaW, xw + x0, yh + y0);
                 yuka[_i] = '31343';
                 if(
                     y0 === 0 ||
@@ -167,17 +169,20 @@
                 a.push([-1, 0]);
                 a.push([0, 1]);
                 if(!y0) a.push([0, -1]);
-                events.push(sel.make(a.map(([x2, y2]) => `#CH_SP\nn:31346,tx:${x + x1 + x2},ty:${y + y1 + y2},l:3,`)));
+                events.push(sel.make(a.map(([x2, y2]) => `#CH_SP\nn:31346,tx:${xw + x1 + x2},ty:${yh + y1 + y2},l:3,`)));
             }
             events.push(`#MV_CF\nt:500,s:1,tw:7,\n#ED`);
             events.push(`#RM_EV\n#ED`);
-            result.push(new rpgen.FullEvent(1).make(events, ...(
-                way === -1 ? [0, 0] : (() => {
-                    const [_x, _y] = sw(way, x, y, w, h);
-                    mono[rpgen3.toI(yukaW, _x, _y)] = '';
-                    return [_x, _y];
-                })()
-            )));
+            const [__x, __y] = way === -1 ? [0, 0] : (() => {
+                const [_x, _y] = sw(way, x, y, w, h);
+                mono[rpgen3.toI(yukaW, _x, _y)] = '';
+                return [_x, _y];
+            })();
+            result.push(new rpgen.FullEvent(1).make(events, {
+                x: __x,
+                y: __y,
+                ed: false
+            }));
             _x = x;
             _y = y;
         }
