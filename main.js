@@ -24,7 +24,7 @@
     const rpgen = await importAll([
         'FullEvent',
         'rpgen'
-    ].map(v => `'https://rpgen3.github.io/midi/mjs/${v}.mjs`));
+    ].map(v => `https://rpgen3.github.io/midi/mjs/${v}.mjs`));
     const sel = new class {
         constructor(){
             this.index = 0;
@@ -37,9 +37,9 @@
             let i = 0;
             const make = i => `#SEL${this.index}-${i}`;
             for(const [i, v] of arr.entries()) {
-                const s = make(i);
-                if(!i) s += ' c:0,' + [...arr.keys()].map(v => `i${v}:${v},`).join('') + '\n';
-                s += v;
+                let s = make(i);
+                if(!i) s += ' c:0,' + [...arr.keys()].map(v => `i${v}:${v},`).join('');
+                s += '\n' + v;
                 a.push(s);
             }
             a.push(`#SELEND${this.index++}`);
@@ -61,6 +61,7 @@
                 min: 11,
                 max: 31
             }));
+            this.wh = wh;
             this.how = rpgen3.addSelect(input, {
                 label: '周り方',
                 list: {
@@ -71,31 +72,31 @@
                 }
             });
         }
-        toI(i){
+        toXY(i){
             const {k} = this;
             return rpgen3.toXY(k, i);
         }
-        toXY(x, y){
+        toI(x, y){
             const {k} = this;
             return rpgen3.toI(k, x, y);
         }
         _Z(){
-            const {k, toI, toXY} = this,
+            const {k} = this,
                   a = [];
             for(const i of Array(k ** 2).keys()) {
-                const [x, y] = toXY(k, i);
-                a.push(y % 2 ? i : toI(k - x, y));
+                const [x, y] = this.toXY(i);
+                a.push(y % 2 ? i : this.toI(k - x, y));
             }
             return a;
         }
         _vortex(){
-            const {k, toXY} = this,
+            const {k} = this,
                   a = [0],
                   set = new Set(a);
             let way = 0, _x = 0, _y = 0;
             while(a.length < k ** 2) {
                 const i = this._sw(way, _x, _y),
-                      [x, y] = toXY(i);
+                      [x, y] = this.toXY(i);
                 if(0 <= x && x < k && 0 <= y && y < k && !set.has(i)) {
                     _x = x;
                     _y = y;
@@ -107,12 +108,11 @@
             return a;
         }
         _sw(way, x, y){
-            const {toI} = this;
             switch(way) {
-                case 0: return toI(x + 1, y);
-                case 1: return toI(x, y - 1);
-                case 2: return toI(x - 1, y);
-                case 3: return toI(x, y + 1);
+                case 0: return this.toI(x + 1, y);
+                case 1: return this.toI(x, y - 1);
+                case 2: return this.toI(x - 1, y);
+                case 3: return this.toI(x, y + 1);
             }
         }
     };
@@ -135,7 +135,7 @@
     rpgen3.addBtn(main, 'make', () => {
         sel.init();
         const result = [];
-        const {k, toXY} = config,
+        const {k} = config,
               [w, h] = config.wh.map(v => v()),
               [_w, _h] = [w, h].map(v => v - 3 >> 1),
               yukaW = w * 9,
@@ -144,7 +144,7 @@
               mono = yuka.slice();
         let _x = 0, _y = 0;
         for(const [i, v] of config.how().entries()) {
-            const [x, y] = toXY(i),
+            const [x, y] = config.toXY(i),
                   way = toWay(x - _x, y - _y),
                   events = [];
             for(const i of Array(w * h).keys()) {
