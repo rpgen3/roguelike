@@ -1,0 +1,8 @@
+#HERO
+3,7#END
+
+#BGM
+https://www.youtube.com/watch?v=q4kzAgfDCkg#END
+
+#BGIMG
+https://i.imgur.com/CBrDcKn.png#END
