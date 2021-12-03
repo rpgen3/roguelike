@@ -169,7 +169,7 @@
                 a.push([-1, 0]);
                 a.push([0, 1]);
                 if(!y0) a.push([0, -1]);
-                events.push(sel.make(a.map(([x2, y2]) => `#CH_SP\nn:31346,tx:${xw + x1 + x2},ty:${yh + y1 + y2},l:3,`)));
+                events.push(sel.make(a.map(([x2, y2]) => `#CH_SP\nn:31346,tx:${xw + x1 + x2},ty:${yh + y1 + y2},l:3,\n#ED`)));
             }
             events.push(`#MV_CF\nt:500,s:1,tw:7,\n#ED`);
             events.push(`#RM_EV\n#ED`);
