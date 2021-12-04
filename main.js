@@ -122,9 +122,18 @@
         else if(y === -1) return 3;
         else return -1;
     };
-    rpgen3.addBtn(main, 'make', () => {
-        const result = [];
-        const {k} = config,
+    const msg = new class {
+        constructor(){
+            this.html = $('<div>').appendTo(main);
+        }
+        async print(str){
+            this.html.text(str);
+            await rpgen3.sleep(0);
+        }
+    };
+    rpgen3.addBtn(main, 'make', async () => {
+        const result = [],
+              {k} = config,
               [w, h] = config.wh.map(v => v()),
               [_w, _h] = [w, h].map(v => v >> 1),
               [__w, __h] = [_w, _h].map(v => v - 1),
@@ -134,9 +143,11 @@
               mono = yuka.slice(),
               how = config.how(),
               mid = how.length >> 1,
-              end = how.length - 1;
+              end = how.length - 1,
+              bbs = [];
         let _x = 0, _y = 0;
         for(const [i, v] of how.entries()) {
+            await msg.print(`${i}/${how.length}`);
             const [x, y] = config.toXY(v),
                   way = toWay(x - _x, y - _y),
                   xw = x * w,
@@ -169,8 +180,8 @@
             if(i === mid || i === end) {
                 const x = xw + _w,
                       y = yh + _h;
-                events.push(`#CH_SP\nn:11_13,tx:${x},ty:${y},l:3,\n#ED`);
                 mono[rpgen3.toI(yukaW, x, y)] = '26993';
+                bbs.push([x, y]);
             }
             events.push(`#MV_CF\nt:500,s:1,tw:7,\n#ED`);
             events.push(`#RM_EV\n#ED`);
@@ -198,6 +209,27 @@
             _x = x;
             _y = y;
         }
+        foot.empty();
+        {
+            const x = 3,
+                  y = 7,
+                  events = [];
+            mono[rpgen3.toI(yukaW, x, y)] = '45C';
+            events.push(`#CH_SP\nn:0,tx:${x},ty:${y},l:2,`);
+            for(const [x, y] of bbs) {
+                events.push(`#CH_SP\nn:11_13,tx:${x},ty:${y},l:3,`);
+                rpgen3.addInputStr(foot, {
+                    value: [x, y].join(', '),
+                    copy: true
+                });
+            }
+            events.push(`#CH_PH\np:0,x:0,y:0,`);
+            result.push(new rpgen.FullEvent(1).make(events, {
+                x,
+                y,
+                ed: true
+            }));
+        }
         const f = arr => {
             let s = '';
             for(const y of Array(yukaH).keys()) {
@@ -211,7 +243,7 @@
         + '\n\n'
         + `#MAP\n${f(mono)}#END`
         + '\n\n';
-        rpgen3.addInputStr(foot.empty(), {
+        rpgen3.addInputStr(foot, {
             value: rpgen.set(d + result.join('\n\n')),
             copy: true
         });
