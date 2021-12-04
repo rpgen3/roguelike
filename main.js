@@ -85,7 +85,7 @@
                   a = [];
             for(const i of Array(k ** 2).keys()) {
                 const [x, y] = this.toXY(i);
-                a.push(y % 2 ? i : this.toI(k - x, y));
+                a.push(y % 2 ? this.toI(k - x - 1, y) : i);
             }
             return a;
         }
@@ -95,8 +95,14 @@
                   set = new Set(a);
             let way = 0, _x = 0, _y = 0;
             while(a.length < k ** 2) {
-                const i = this._sw(way, _x, _y),
-                      [x, y] = this.toXY(i);
+                const [c, d] = [
+                    [1, 0],
+                    [0, -1],
+                    [-1, 0],
+                    [0, 1]
+                ][way];
+                const [x, y] = [_x + c, _y + d],
+                      i = this.toI(x, y);
                 if(0 <= x && x < k && 0 <= y && y < k && !set.has(i)) {
                     _x = x;
                     _y = y;
@@ -107,14 +113,6 @@
             }
             return a;
         }
-        _sw(way, x, y){
-            switch(way) {
-                case 0: return this.toI(x + 1, y);
-                case 1: return this.toI(x, y - 1);
-                case 2: return this.toI(x - 1, y);
-                case 3: return this.toI(x, y + 1);
-            }
-        }
     };
     const toWay = (x, y) => {
         if(x === 1) return 0;
@@ -123,32 +121,24 @@
         else if(y === -1) return 3;
         else return -1;
     };
-    const sw = (way, x, y, w, h) => {
-        const [_w, _h] = [w, h].map(v => v >> 1);
-        switch(way) {
-            case 0: return [x, y + _h];
-            case 1: return [x + _w, y];
-            case 2: return [x + w , y + _h];
-            case 3: return [x + _w, y + h];
-        }
-    };
     rpgen3.addBtn(main, 'make', () => {
-        sel.init();
         const result = [];
         const {k} = config,
               [w, h] = config.wh.map(v => v()),
-              [_w, _h] = [w, h].map(v => v - 3 >> 1),
+              [_w, _h] = [w, h].map(v => v >> 1),
+              [__w, __h] = [_w, _h].map(v => v - 1),
               yukaW = w * 9,
               yukaH = h * 9,
               yuka = [...Array(yukaH * yukaW).fill('')],
               mono = yuka.slice();
         let _x = 0, _y = 0;
         for(const [i, v] of config.how().entries()) {
-            const [x, y] = config.toXY(i),
+            const [x, y] = config.toXY(v),
                   way = toWay(x - _x, y - _y),
                   xw = x * w,
                   yh = y * h,
                   events = [];
+            console.log(x, y, way)
             for(const i of Array(w * h).keys()) {
                 const [x0, y0] = rpgen3.toXY(w, i),
                       _i = rpgen3.toI(yukaW, xw + x0, yh + y0);
@@ -161,22 +151,34 @@
                     (x0 % 2 === 0 && y0 % 2 === 0)
                 ) mono[_i] = '31346C';
             }
-            events.push(`#MV_CA\ntx:7,ty:5,t:500,s:1,tw:7,\n#ED`);
-            for(const i of Array(_w * _h).keys()) {
-                const [x0, y0] = rpgen3.toXY(_w, i),
-                      [x1, y1] = [x0, y0].map(v => (v << 1) + 3),
+            events.push(`#MV_CA\ntx:${xw + _w},ty:${yh + _h},t:500,s:1,tw:7,\n#ED`);
+            sel.init();
+            for(const i of Array(__w * __h).keys()) {
+                const [x, y] = rpgen3.toXY(__w, i),
+                      [_x, _y] = [x, y].map(v => (v << 1) + 2),
                       a = [];
                 a.push([1, 0]);
                 a.push([-1, 0]);
                 a.push([0, 1]);
-                if(!y0) a.push([0, -1]);
-                events.push(sel.make(a.map(([x2, y2]) => `#CH_SP\nn:31346,tx:${xw + x1 + x2},ty:${yh + y1 + y2},l:3,\n#ED`)));
+                if(!y) a.push([0, -1]);
+                events.push(sel.make(a.map(([x2, y2]) => `#CH_SP\nn:31346,tx:${xw + _x + x2},ty:${yh + _y + y2},l:3,\n#ED`)));
             }
             events.push(`#MV_CF\nt:500,s:1,tw:7,\n#ED`);
             events.push(`#RM_EV\n#ED`);
             const [__x, __y] = way === -1 ? [0, 0] : (() => {
-                const [_x, _y] = sw(way, xw, yh, w, h);
+                const [a, b] = [
+                    [-1, 0],
+                    [0, -1],
+                    [1, 0],
+                    [0, 1]
+                ][way];
+                const [x, y] = [xw + _w, yh + _h];
+                const [_x, _y] = [
+                    x + a * _w,
+                    y + b * _h
+                ];
                 mono[rpgen3.toI(yukaW, _x, _y)] = '';
+                mono[rpgen3.toI(yukaW, _x + a, _y + b)] = '';
                 return [_x, _y];
             })();
             result.push(new rpgen.FullEvent(1).make(events, {
