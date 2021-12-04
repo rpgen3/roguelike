@@ -64,6 +64,7 @@
             this.wh = wh;
             this.how = rpgen3.addSelect(input, {
                 label: '周り方',
+                save: true,
                 list: {
                     'Z': this._Z(),
                     'N': toTransposed(this._Z()),
