@@ -127,18 +127,20 @@
               [w, h] = config.wh.map(v => v()),
               [_w, _h] = [w, h].map(v => v >> 1),
               [__w, __h] = [_w, _h].map(v => v - 1),
-              yukaW = w * 9,
-              yukaH = h * 9,
+              yukaW = w * k,
+              yukaH = h * k,
               yuka = [...Array(yukaH * yukaW).fill('')],
-              mono = yuka.slice();
+              mono = yuka.slice(),
+              how = config.how(),
+              mid = how.length >> 1,
+              end = how.length - 1;
         let _x = 0, _y = 0;
-        for(const [i, v] of config.how().entries()) {
+        for(const [i, v] of how.entries()) {
             const [x, y] = config.toXY(v),
                   way = toWay(x - _x, y - _y),
                   xw = x * w,
                   yh = y * h,
                   events = [];
-            console.log(x, y, way)
             for(const i of Array(w * h).keys()) {
                 const [x0, y0] = rpgen3.toXY(w, i),
                       _i = rpgen3.toI(yukaW, xw + x0, yh + y0);
@@ -162,6 +164,12 @@
                 a.push([0, 1]);
                 if(!y) a.push([0, -1]);
                 events.push(sel.make(a.map(([x2, y2]) => `#CH_SP\nn:31346,tx:${xw + _x + x2},ty:${yh + _y + y2},l:3,\n#ED`)));
+            }
+            if(i === mid || i === end) {
+                const x = xw + _w,
+                      y = yh + _h;
+                events.push(`#CH_SP\nn:11_13,tx:${x},ty:${y},l:3,\n#ED`);
+                mono[rpgen3.toI(yukaW, x, y)] = '26993';
             }
             events.push(`#MV_CF\nt:500,s:1,tw:7,\n#ED`);
             events.push(`#RM_EV\n#ED`);
